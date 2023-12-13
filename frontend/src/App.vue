@@ -1,26 +1,50 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div>
+    <line-chart :chart-data="chartData" :options="chartOptions" />
+  </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import { defineComponent } from 'vue';
+import { LineChart } from 'vue-chart-3';
+import { Chart, registerables } from 'chart.js';
+Chart.register(...registerables);
 
-export default {
-  name: 'App',
+export default defineComponent({
   components: {
-    HelloWorld
-  }
-}
-</script>
+    LineChart
+  },
+  data() {
+    return {
+      chartData: {
+        labels: [], // データポイントのラベル（例：タイムスタンプ）
+        datasets: [
+          {
+            label: 'センサーデータ',
+            data: [], // グラフに描画するデータ
+            // その他のグラフ設定
+          }
+        ]
+      },
+      chartOptions: {
+        // グラフのオプション
+      },
+      ws: null
+    };
+  },
+  mounted() {
+    this.ws = new WebSocket('ws://localhost:8080');
 
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>
+    this.ws.onmessage = (event) => {
+      console.log('受信したデータ：', event.data);
+      // センサーデータを受信し、グラフを更新
+      const value = parseFloat(event.data);
+      if (!isNaN(value)) {
+        this.chartData.labels.push(new Date().toLocaleTimeString());
+        this.chartData.datasets[0].data.push(value);
+        this.chartData = { ...this.chartData }; // リアクティブなデータ更新
+      }
+    };
+  }
+});
+</script>

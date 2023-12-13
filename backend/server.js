@@ -1,39 +1,38 @@
 'use strict';
 
+const fs = require('fs');
 const { SerialPort } = require('serialport');
 const { ReadlineParser } = require('@serialport/parser-readline');
-const ExcelJS = require('exceljs');
+
+// CSVファイルのヘッダー
+const headers = 'Timestamp,SensorValue\n';
+const csvFilePath = 'SensorData.csv';
 
 // シリアルポート設定 115200bps
 const port = new SerialPort({ path: "COM9", baudRate: 115200 });
 const parser = port.pipe(new ReadlineParser({ delimiter: '\r\n' }));
 
-// 新しいワークブックとワークシートの作成
-const workbook = new ExcelJS.Workbook();
-const worksheet = workbook.addWorksheet('Data');
+// CSVファイルが存在しない場合は、新しくファイルを作成してヘッダーを書き込む
+if (!fs.existsSync(csvFilePath)) {
+  fs.writeFileSync(csvFilePath, headers, (err) => {
+    if (err) throw err;
+  });
+}
 
-// 列ヘッダーの設定
-worksheet.columns = [
-  { header: 'Timestamp', key: 'timestamp', width: 20 },
-  { header: 'SensorValue', key: 'value', width: 15 },
-  // 他のセンサデータの列もここに追加
-];
-
-port.on('open', function() {
+port.on('open', () => {
   console.log('ポートを開けました。');
 });
 
 // 受信データのハンドリング
-parser.on('data', function(data) {
+parser.on('data', (data) => {
   console.log('受信データ:', data);
-  const timestamp = new Date(); // タイムスタンプの生成
-  const parsedData = { timestamp, value: parseFloat(data) };
-  worksheet.addRow(parsedData).commit(); // Excelに行を追加
-});
+  const timestamp = new Date().toISOString(); // ISO形式のタイムスタンプ
+  const sensorValue = parseFloat(data).toFixed(2); // センサー値を小数点2桁で丸める
+  const csvData = `${timestamp},${sensorValue}\n`; // CSV形式の文字列
 
-// 10秒ごとにExcelファイルを保存
-setInterval(() => {
-  workbook.xlsx.writeFile('SensorData.xlsx')
-    .then(() => console.log('Excelにデータを保存しました。'))
-    .catch(err => console.error('Excelファイルの保存時にエラーが発生しました:', err));
-}, 10000);
+  // CSVファイルに追記
+  fs.appendFile(csvFilePath, csvData, (err) => {
+    if (err) throw err;
+    console.log('CSVにデータを追記しました。');
+  });
+});

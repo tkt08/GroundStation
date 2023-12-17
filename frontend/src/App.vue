@@ -1,84 +1,104 @@
 <template>
   <div>
-    <line-chart :chart-data="chartData" :options="chartOptions" />
+    <canvas id="gauge-acceleration" width="400" height="200"></canvas>
+    <canvas id="gauge-gyro" width="400" height="200"></canvas>
+    <canvas id="gauge-altitude" width="400" height="200"></canvas>
   </div>
 </template>
 
 <script>
-import { defineComponent } from 'vue';
-import { LineChart } from 'vue-chart-3';
-import { Chart, registerables } from 'chart.js';
-Chart.register(...registerables);
+import { RadialGauge } from 'canvas-gauges';
 
-export default defineComponent({
-  components: {
-    LineChart
-  },
+export default {
   data() {
     return {
-      chartData: {
-        labels: [],
-        datasets: [
-          {
-            label: 'acc_x',
-            data: [],
-            borderColor: 'red',
-            // その他のグラフ設定
-          },
-          {
-            label: 'acc_y',
-            data: [],
-            borderColor: 'green',
-            // その他のグラフ設定
-          },
-          {
-            label: 'acc_z',
-            data: [],
-            borderColor: 'blue',
-            // その他のグラフ設定
-          },
-          {
-            label: 'gyro_x',
-            data: [],
-            borderColor: 'orange',
-          },
-          {
-            label: 'gyro_y',
-            data: [],
-            borderColor: 'purple',
-          },
-          {
-            label: 'gyro_z',
-            data: [],
-            borderColor: 'yellow',
-          }
-        ]
-      },
-      chartOptions: {
-        // グラフのオプション
-      },
-      ws: null
+      gauges: {}
     };
   },
+  methods: {
+    createGauge(elementId, value, max, units) {
+      return new RadialGauge({
+        renderTo: elementId,
+        width: 400,
+        height: 200,
+        units: units,
+        minValue: 0,
+        maxValue: max,
+        value: value,
+        // その他のゲージ設定...
+      }).draw();
+    },
+    updateGauge(gauge, value) {
+      gauge.value = value;
+    }
+  },
   mounted() {
+    
+    this.gauges.acceleration = new RadialGauge({
+      renderTo: 'gauge-acceleration',
+      width: 400,
+      height: 200,
+      units: 'Acceleration [m/s^2]',
+      minValue: -3,
+      maxValue: 10,
+      value: 0,
+      majorTicks: ['-3', '0', '3', '6', '9', '12'],
+      minorTicks: 2,
+      highlights: [
+        { from: -3, to: 0, color: 'rgba(200, 50, 50, .75)' },
+        { from: 0, to: 3, color: 'rgba(50, 200, 50, .75)' },
+        { from: 3, to: 6, color: 'rgba(50, 50, 200, .75)' },
+        { from: 6, to: 10, color: 'rgba(200, 50, 200, .75)' }
+      ],
+    }).draw();
+
+
+    this.gauges.gyro = new RadialGauge({
+      renderTo: 'gauge-gyro',
+      width: 400,
+      height: 200,
+      units: 'gyro [rad/s]',
+      minValue: -400,
+      maxValue: 400,
+      value: 0,
+      majorTicks: ['-400', '-200', '0', '200', '400'],
+      minorTicks: 2,
+      highlights: [
+        { from: -400, to: 0, color: 'rgba(200, 50, 50, .75)' },
+        { from: 0, to: 400, color: 'rgba(50, 200, 50, .75)' },
+      ],
+    }).draw();
+
+    this.gauges.altitude = new RadialGauge({
+      renderTo: 'gauge-altitude',
+      width: 400,
+      height: 200,
+      units: 'Altitude [m]',
+      minValue: 0,
+      maxValue: 500,
+      value: 0,
+      majorTicks: ['0', '100', '200', '300', '400', '500'],
+      minorTicks: 2,
+      highlights: [
+        { from: 0, to: 100, color: 'rgba(200, 50, 50, .75)' },
+        { from: 100, to: 200, color: 'rgba(50, 200, 50, .75)' },
+        { from: 200, to: 300, color: 'rgba(50, 50, 200, .75)' },
+        { from: 300, to: 500, color: 'rgba(200, 50, 200, .75)' }
+      ],
+    }).draw();
+
     this.ws = new WebSocket('ws://localhost:8080');
 
-  this.ws.onmessage = (event) => {
-  const values = event.data.split(',').map(Number);
-  if (values.length >= 6) {
-    const [accX, accY, accZ, gyroX, gyroY, gyroZ] = values;
-    const label = new Date().toLocaleTimeString();
-    this.chartData.labels.push(label);
-    this.chartData.datasets[0].data.push(accX);
-    this.chartData.datasets[1].data.push(accY);
-    this.chartData.datasets[2].data.push(accZ);
-    this.chartData.datasets[3].data.push(gyroX);
-    this.chartData.datasets[4].data.push(gyroY);
-    this.chartData.datasets[5].data.push(gyroZ);
-    this.chartData = { ...this.chartData }; // リアクティブなデータ更新
+    this.ws.onmessage = (event) => {
+      console.log(event.data);
+      const [acc, gyro, altitude] = event.data.split(',').map(Number);
+      this.updateGauge(this.gauges.acceleration, acc);
+      this.gauges.acceleration.update();
+      this.updateGauge(this.gauges.gyro, gyro);
+      this.gauges.gyro.update();
+      this.updateGauge(this.gauges.altitude, altitude);
+      this.gauges.altitude.update();
+    };
   }
 };
-
-  }
-});
 </script>

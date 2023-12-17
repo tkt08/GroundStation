@@ -57,7 +57,7 @@ export default {
       renderTo: 'gauge-gyro',
       width: 400,
       height: 200,
-      units: 'gyro [rad/s]',
+      units: 'Gyro [rad/s]',
       minValue: -400,
       maxValue: 400,
       value: 0,

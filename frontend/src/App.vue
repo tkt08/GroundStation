@@ -1,5 +1,6 @@
 <template>
   <div>
+    <div id="map" style = "height: 500px;"></div>
     <canvas id="gauge-acceleration" width="400" height="200"></canvas>
     <canvas id="gauge-gyro" width="400" height="200"></canvas>
     <canvas id="gauge-altitude" width="400" height="200"></canvas>
@@ -8,11 +9,16 @@
 
 <script>
 import { RadialGauge } from 'canvas-gauges';
+import L from 'leaflet';
 
 export default {
   data() {
     return {
-      gauges: {}
+      gauges: {},
+      map: null,
+      titleLayer: null,
+      center: [40.138633, 139.984850],
+      zoom: 13,
     };
   },
   methods: {
@@ -30,6 +36,17 @@ export default {
     },
     updateGauge(gauge, value) {
       gauge.value = value;
+    },
+
+    initMap() {
+      this.map = L.map('map').setView(this.center, this.zoom);
+      this.tileLayer = L.tileLayer(
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+        }
+      );
+      this.tileLayer.addTo(this.map);
     }
   },
   mounted() {
@@ -99,6 +116,8 @@ export default {
       this.updateGauge(this.gauges.altitude, altitude);
       this.gauges.altitude.update();
     };
+
+    this.initMap();
   }
 };
 </script>

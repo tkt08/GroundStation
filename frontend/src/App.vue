@@ -10,6 +10,7 @@
 <script>
 import { RadialGauge } from 'canvas-gauges';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 export default {
   data() {
@@ -56,16 +57,16 @@ export default {
       width: 400,
       height: 200,
       units: 'Acceleration [m/s^2]',
-      minValue: -3,
-      maxValue: 10,
+      minValue: 0,
+      maxValue: 12,
       value: 0,
-      majorTicks: ['-3', '0', '3', '6', '9', '12'],
+      majorTicks: ['0', '3', '6', '9', '12'],
       minorTicks: 2,
       highlights: [
-        { from: -3, to: 0, color: 'rgba(200, 50, 50, .75)' },
-        { from: 0, to: 3, color: 'rgba(50, 200, 50, .75)' },
+        { from: 0, to: 3, color: 'rgba(200, 50, 50, .75)' },
         { from: 3, to: 6, color: 'rgba(50, 50, 200, .75)' },
-        { from: 6, to: 10, color: 'rgba(200, 50, 200, .75)' }
+        { from: 6, to: 9, color: 'rgba(200, 50, 200, .75)' },
+        { from: 9, to: 12, color: 'rgba(50, 200, 50, .75)'}
       ],
     }).draw();
 
@@ -117,7 +118,11 @@ export default {
       this.gauges.altitude.update();
     };
 
-    this.initMap();
+    this.map = L.map('map').setView(this.center, this.zoom);
+    L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+    }).addTo(this.map);
+
   }
 };
 </script>

@@ -19,7 +19,7 @@ export default {
       map: null,
       titleLayer: null,
       center: [40.138633, 139.984850],
-      zoom: 16,
+      zoom: 20,
     };
   },
   methods: {
